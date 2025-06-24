@@ -1,238 +1,133 @@
-import { useState } from 'react';
-import Layout from '../components/Layout';
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-
-const categories = [
-  'All Categories',
-  'Aircraft Parts',
-  'Tools',
-  'Consumables',
-  'Electronics',
-];
-
-const locations = [
-  'All Locations',
-  'Main Warehouse',
-  'Hangar A',
-  'Hangar B',
-  'Remote Storage',
-];
-
-const items = [
+const sampleItems = [
   {
-    id: 1,
-    sku: 'ABC123',
-    description: 'Boeing 737 Landing Gear',
-    category: 'Aircraft Parts',
-    location: 'Main Warehouse',
-    quantity: 5,
-    minQuantity: 3,
-    status: 'In Stock',
+    PN: '336-024-704-0',
+    DESCRIPTION: 'COVER ASSY-OIL INLET',
+    STOCK_LINE: '27',
+    QTY_OH: 1,
+    UNIT_COST: 120.042,
+    EXT_COST: 120.042,
+    CONDITION_CODE: 'INS',
+    LOCATION_CODE: 'PUT AWAY',
+    WAREHOUSE_CODE: 'FTAIC-SV',
+    REC_DATE: '03/07/2018',
+    STOCK_UNIT: 'EA',
   },
   {
-    id: 2,
-    sku: 'DEF456',
-    description: 'Aviation Tool Kit',
-    category: 'Tools',
-    location: 'Hangar A',
-    quantity: 2,
-    minQuantity: 5,
-    status: 'Low Stock',
+    PN: '338-010-003-0',
+    DESCRIPTION: 'SHAFT-LPT',
+    STOCK_LINE: '3',
+    QTY_OH: 1,
+    UNIT_COST: 0,
+    EXT_COST: 0,
+    CONDITION_CODE: 'AR',
+    LOCATION_CODE: 'LPT-RACK-US',
+    WAREHOUSE_CODE: 'PFR-COM',
+    REC_DATE: '06/07/2016',
+    STOCK_UNIT: 'EA',
   },
   {
-    id: 3,
-    sku: 'GHI789',
-    description: 'Aircraft Paint',
-    category: 'Consumables',
-    location: 'Main Warehouse',
-    quantity: 15,
-    minQuantity: 10,
-    status: 'In Stock',
+    PN: '340-074-722-0',
+    DESCRIPTION: 'SHAFT-LPT',
+    STOCK_LINE: '1',
+    QTY_OH: 1,
+    UNIT_COST: 0,
+    EXT_COST: 0,
+    CONDITION_CODE: 'US',
+    LOCATION_CODE: 'US-M13-1',
+    WAREHOUSE_CODE: 'PFR-COM',
+    REC_DATE: '19/08/2016',
+    STOCK_UNIT: 'EA',
+  },
+  {
+    PN: '338-077-502-0',
+    DESCRIPTION: 'SUPPORT-RTR LPT',
+    STOCK_LINE: '152',
+    QTY_OH: 1,
+    UNIT_COST: 0,
+    EXT_COST: 0,
+    CONDITION_CODE: 'US',
+    LOCATION_CODE: 'LM-COM-PFR-06',
+    WAREHOUSE_CODE: 'PFR-COM',
+    REC_DATE: '01/03/2023',
+    STOCK_UNIT: 'EA',
+  },
+  {
+    PN: '336-002-006-0',
+    DESCRIPTION: 'DISK-LPT STG 3',
+    STOCK_LINE: '38',
+    QTY_OH: 1,
+    UNIT_COST: 1002.26,
+    EXT_COST: 1002.26,
+    CONDITION_CODE: 'OH',
+    LOCATION_CODE: 'T-2C',
+    WAREHOUSE_CODE: 'FTAIC-SV',
+    REC_DATE: '16/08/2016',
+    STOCK_UNIT: 'EA',
   },
 ];
+
+const conditionColors: Record<string, string> = {
+  INS: 'bg-green-100 text-green-800',
+  AR: 'bg-yellow-100 text-yellow-800',
+  US: 'bg-blue-100 text-blue-800',
+  OH: 'bg-purple-100 text-purple-800',
+};
 
 export default function ItemMaster() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState(categories[0]);
-  const [selectedLocation, setSelectedLocation] = useState(locations[0]);
-  const [selectedItem, setSelectedItem] = useState<typeof items[0] | null>(null);
-
-  const filteredItems = items.filter((item) => {
-    const matchesSearch = item.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'All Categories' || item.category === selectedCategory;
-    const matchesLocation = selectedLocation === 'All Locations' || item.location === selectedLocation;
-    return matchesSearch && matchesCategory && matchesLocation;
-  });
-
   return (
-    <Layout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Item Master</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            View and manage your inventory items
-          </p>
-        </div>
-
-        {/* Search and Filters */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="relative">
-            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-              <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
-            </div>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="block w-full rounded-md border-0 py-1.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-ftai-blue sm:text-sm sm:leading-6"
-              placeholder="Search by SKU or description"
-            />
+    <div className="space-y-6">
+      <div className="flex items-center mb-4">
+        <div className="h-10 w-2 rounded bg-blue-600 mr-3" />
+        <h1 className="text-3xl font-bold text-gray-900">Item Master</h1>
+      </div>
+      <div className="bg-white rounded-lg shadow">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold text-gray-800">Parts List</h2>
+            <button className="bg-gradient-to-r from-blue-500 to-blue-700 text-white px-6 py-2 rounded-lg shadow hover:from-blue-600 hover:to-blue-800 font-bold transition">+ Add Item</button>
           </div>
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-ftai-blue sm:text-sm sm:leading-6"
-          >
-            {categories.map((category) => (
-              <option key={category} value={category}>
-                {category}
-              </option>
-            ))}
-          </select>
-          <select
-            value={selectedLocation}
-            onChange={(e) => setSelectedLocation(e.target.value)}
-            className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-ftai-blue sm:text-sm sm:leading-6"
-          >
-            {locations.map((location) => (
-              <option key={location} value={location}>
-                {location}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Items Table */}
-        <div className="rounded-lg bg-white shadow">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-300">
-              <thead>
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-blue-50">
                 <tr>
-                  <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">
-                    SKU
-                  </th>
-                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                    Description
-                  </th>
-                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                    Category
-                  </th>
-                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                    Location
-                  </th>
-                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                    Quantity
-                  </th>
-                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                    Status
-                  </th>
+                  <th className="px-4 py-2 text-left text-xs font-bold text-blue-700 uppercase">PN</th>
+                  <th className="px-4 py-2 text-left text-xs font-bold text-blue-700 uppercase">Description</th>
+                  <th className="px-4 py-2 text-left text-xs font-bold text-blue-700 uppercase">Stock Line</th>
+                  <th className="px-4 py-2 text-left text-xs font-bold text-blue-700 uppercase">Qty OH</th>
+                  <th className="px-4 py-2 text-left text-xs font-bold text-blue-700 uppercase">Unit Cost</th>
+                  <th className="px-4 py-2 text-left text-xs font-bold text-blue-700 uppercase">Ext Cost</th>
+                  <th className="px-4 py-2 text-left text-xs font-bold text-blue-700 uppercase">Condition</th>
+                  <th className="px-4 py-2 text-left text-xs font-bold text-blue-700 uppercase">Location</th>
+                  <th className="px-4 py-2 text-left text-xs font-bold text-blue-700 uppercase">Warehouse</th>
+                  <th className="px-4 py-2 text-left text-xs font-bold text-blue-700 uppercase">Rec Date</th>
+                  <th className="px-4 py-2 text-left text-xs font-bold text-blue-700 uppercase">Unit</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredItems.map((item) => (
-                  <tr
-                    key={item.id}
-                    className="cursor-pointer hover:bg-gray-50"
-                    onClick={() => setSelectedItem(item)}
-                  >
-                    <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                      {item.sku}
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                      {item.description}
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                      {item.category}
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                      {item.location}
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                      {item.quantity}
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-4 text-sm">
-                      <span
-                        className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${
-                          item.status === 'Low Stock'
-                            ? 'bg-red-50 text-red-700'
-                            : 'bg-green-50 text-green-700'
-                        }`}
-                      >
-                        {item.status}
+              <tbody>
+                {sampleItems.map((item, idx) => (
+                  <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-blue-50 hover:bg-blue-100'}>
+                    <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">{item.PN}</td>
+                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">{item.DESCRIPTION}</td>
+                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">{item.STOCK_LINE}</td>
+                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">{item.QTY_OH}</td>
+                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">{item.UNIT_COST}</td>
+                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">{item.EXT_COST}</td>
+                    <td className="px-4 py-2 whitespace-nowrap">
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${conditionColors[item.CONDITION_CODE] || 'bg-gray-100 text-gray-800'}`}>
+                        {item.CONDITION_CODE}
                       </span>
                     </td>
+                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">{item.LOCATION_CODE}</td>
+                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">{item.WAREHOUSE_CODE}</td>
+                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">{item.REC_DATE}</td>
+                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">{item.STOCK_UNIT}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         </div>
-
-        {/* Item Detail Modal */}
-        {selectedItem && (
-          <div className="fixed inset-0 z-50 overflow-y-auto">
-            <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-              <div className="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
-                <div>
-                  <h3 className="text-lg font-semibold leading-6 text-gray-900">
-                    Item Details
-                  </h3>
-                  <div className="mt-4 space-y-4">
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">SKU</p>
-                      <p className="mt-1 text-sm text-gray-900">{selectedItem.sku}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Description</p>
-                      <p className="mt-1 text-sm text-gray-900">{selectedItem.description}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Category</p>
-                      <p className="mt-1 text-sm text-gray-900">{selectedItem.category}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Location</p>
-                      <p className="mt-1 text-sm text-gray-900">{selectedItem.location}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Quantity</p>
-                      <p className="mt-1 text-sm text-gray-900">{selectedItem.quantity}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Minimum Quantity</p>
-                      <p className="mt-1 text-sm text-gray-900">{selectedItem.minQuantity}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Status</p>
-                      <p className="mt-1 text-sm text-gray-900">{selectedItem.status}</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-5 sm:mt-6">
-                  <button
-                    type="button"
-                    className="inline-flex w-full justify-center rounded-md bg-ftai-blue px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-ftai-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ftai-blue"
-                    onClick={() => setSelectedItem(null)}
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
-    </Layout>
+    </div>
   );
 } 

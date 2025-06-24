@@ -1,117 +1,89 @@
-import { useState } from 'react';
-import Layout from '../components/Layout';
-import {
-  ChartBarIcon,
-  ExclamationTriangleIcon,
-  ArrowPathIcon,
-  XCircleIcon,
-} from '@heroicons/react/24/outline';
+import React, { useEffect, useRef } from 'react';
 
 const stats = [
-  { name: 'Total SKUs', value: '12,345', icon: ChartBarIcon },
-  { name: 'Items Below Min', value: '23', icon: ExclamationTriangleIcon },
-  { name: 'Incoming Repairs', value: '45', icon: ArrowPathIcon },
-  { name: 'Upload Failures', value: '3', icon: XCircleIcon },
+  { label: 'Total Items', value: 128 },
+  { label: 'Total Value', value: '$1,250,000' },
+  { label: 'Low Stock', value: 7 },
+  { label: 'Warehouses', value: 3 },
 ];
 
-const recentActivity = [
-  {
-    id: 1,
-    type: 'Stock Update',
-    description: 'Updated stock level for SKU ABC123',
-    timestamp: '2024-03-18 14:30',
-  },
-  {
-    id: 2,
-    type: 'New Item',
-    description: 'Added new item XYZ789 to inventory',
-    timestamp: '2024-03-18 13:15',
-  },
-  {
-    id: 3,
-    type: 'Alert',
-    description: 'Low stock alert for SKU DEF456',
-    timestamp: '2024-03-18 12:00',
-  },
+const stockByCategory = [
+  { category: 'LLP', count: 40 },
+  { category: 'EXPENDABLE', count: 30 },
+  { category: 'CFM56-5B/7', count: 25 },
+  { category: 'SUPPORT', count: 18 },
+  { category: 'DISK', count: 15 },
 ];
+
+const aiSummary = `
+Inventory levels are stable overall. Notably, 7 items are flagged as low stock, primarily in the LLP and Expendable categories. No critical shortages detected, but consider restocking COVER ASSY-OIL INLET and DISK-LPT STG 3 soon. Recent receipts have improved stock in the main warehouse. No urgent alerts, but shelf life monitoring is recommended for older parts.`;
 
 export default function Dashboard() {
-  return (
-    <Layout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Overview of your inventory system
-          </p>
-        </div>
+  const barRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {stats.map((stat) => (
-            <div
-              key={stat.name}
-              className="relative overflow-hidden rounded-lg bg-white px-4 pb-12 pt-5 shadow sm:px-6 sm:pt-6"
-            >
-              <dt>
-                <div className="absolute rounded-md bg-ftai-blue p-3">
-                  <stat.icon className="h-6 w-6 text-white" aria-hidden="true" />
-                </div>
-                <p className="ml-16 truncate text-sm font-medium text-gray-500">
-                  {stat.name}
-                </p>
-              </dt>
-              <dd className="ml-16 flex items-baseline pb-6 sm:pb-7">
-                <p className="text-2xl font-semibold text-gray-900">
-                  {stat.value}
-                </p>
-              </dd>
+  useEffect(() => {
+    barRefs.current.forEach((bar, idx) => {
+      if (bar) {
+        bar.style.height = '0px';
+        setTimeout(() => {
+          bar.style.transition = 'height 1s cubic-bezier(0.4,0,0.2,1)';
+          bar.style.height = `${stockByCategory[idx].count * 3}px`;
+        }, 200 + idx * 120);
+      }
+    });
+  }, []);
+
+  return (
+    <div className="space-y-8">
+      <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+      {/* AI Insights Card */}
+      <div className="bg-brand-lightBlue border-l-8 border-brand-orange rounded-lg shadow p-6 mb-2 opacity-0 translate-y-4 animate-fadein">
+        <div className="flex items-center mb-2">
+          <span className="inline-block bg-brand-orange text-white rounded-full px-3 py-1 text-xs font-bold mr-2">AI Insights</span>
+          <span className="text-sm text-brand-navy font-semibold">Powered by LLM</span>
+        </div>
+        <div className="text-brand-navy text-base leading-relaxed">
+          {aiSummary}
+        </div>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 opacity-0 translate-y-4 animate-fadein delay-200">
+        {stats.map((stat, i) => (
+          <div
+            key={stat.label}
+            className="bg-white rounded-lg shadow p-6 flex flex-col items-center transform transition hover:scale-105 duration-300"
+            style={{ transitionDelay: `${100 * i}ms` }}
+          >
+            <div className="text-2xl font-bold text-brand-blue">{stat.value}</div>
+            <div className="text-gray-500 mt-2">{stat.label}</div>
+          </div>
+        ))}
+      </div>
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-xl font-semibold mb-4">Stock by Category</h2>
+        <div className="flex items-end space-x-6 h-40">
+          {stockByCategory.map((cat, idx) => (
+            <div key={cat.category} className="flex flex-col items-center justify-end h-full">
+              <div
+                ref={el => (barRefs.current[idx] = el)}
+                className="w-10 rounded-t bg-brand-blue bar-animate"
+                style={{ height: 0 }}
+                title={String(cat.count)}
+              ></div>
+              <div className="mt-2 text-xs text-gray-700">{cat.category}</div>
+              <div className="text-xs text-gray-500">{cat.count}</div>
             </div>
           ))}
         </div>
-
-        {/* Chart placeholder */}
-        <div className="rounded-lg bg-white shadow">
-          <div className="p-6">
-            <h3 className="text-base font-semibold leading-6 text-gray-900">
-              Inventory by Category
-            </h3>
-            <div className="mt-6 h-96 bg-gray-50 flex items-center justify-center">
-              <p className="text-gray-500">Chart will be implemented here</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Recent Activity */}
-        <div className="rounded-lg bg-white shadow">
-          <div className="p-6">
-            <h3 className="text-base font-semibold leading-6 text-gray-900">
-              Recent Activity
-            </h3>
-            <div className="mt-6 flow-root">
-              <ul role="list" className="-my-5 divide-y divide-gray-200">
-                {recentActivity.map((activity) => (
-                  <li key={activity.id} className="py-4">
-                    <div className="flex items-center space-x-4">
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-gray-900">
-                          {activity.type}
-                        </p>
-                        <p className="truncate text-sm text-gray-500">
-                          {activity.description}
-                        </p>
-                      </div>
-                      <div className="inline-flex items-center text-sm text-gray-500">
-                        {activity.timestamp}
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
       </div>
-    </Layout>
+      <style>{`
+        @keyframes fadein {
+          to { opacity: 1; transform: none; }
+        }
+        .animate-fadein {
+          animation: fadein 0.8s cubic-bezier(0.4,0,0.2,1) forwards;
+        }
+        .delay-200 { animation-delay: 0.2s; }
+      `}</style>
+    </div>
   );
 } 

@@ -1,41 +1,41 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
-
-interface User {
-  email: string;
-  role: string;
-}
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface AuthContextType {
-  user: User | null;
-  login: (email: string, password: string) => Promise<void>;
+  isAuthenticated: boolean;
+  login: (username: string, password: string) => void;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  const login = async (email: string, password: string) => {
-    // TODO: Implement actual authentication logic
-    setUser({ email, role: 'admin' });
+  useEffect(() => {
+    const stored = localStorage.getItem('demo-auth');
+    setIsAuthenticated(stored === 'true');
+  }, []);
+
+  const login = (username: string, password: string) => {
+    // Accept any username/password for demo
+    localStorage.setItem('demo-auth', 'true');
+    setIsAuthenticated(true);
   };
 
   const logout = () => {
-    setUser(null);
+    localStorage.removeItem('demo-auth');
+    setIsAuthenticated(false);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-} 
+export const useAuth = () => {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  return ctx;
+}; 
