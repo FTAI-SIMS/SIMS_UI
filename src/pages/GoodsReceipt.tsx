@@ -1,3 +1,5 @@
+import PageAIChat from '../components/PageAIChat';
+
 const sampleReceipts = [
   {
     RECEIVER_NUMBER: '88534',
@@ -37,6 +39,16 @@ const conditionColors: Record<string, string> = {
   US: 'bg-blue-100 text-blue-800',
   OH: 'bg-purple-100 text-purple-800',
 };
+
+function goodsReceiptDataContextBuilder(data: typeof sampleReceipts) {
+  if (!data.length) return 'No goods receipt data available.';
+  let summary = `Total Receipts: ${data.length}\n`;
+  summary += 'Sample Receipts:';
+  data.slice(0, 5).forEach((item) => {
+    summary += `\n- ${item.RECEIVER_NUMBER}: ${item.DESCRIPTION} (${item.QTY_OH}) in ${item.LOCATION_CODE}`;
+  });
+  return summary;
+}
 
 export default function GoodsReceipt() {
   return (
@@ -87,6 +99,11 @@ export default function GoodsReceipt() {
           </div>
         </div>
       </div>
+      <PageAIChat
+        data={sampleReceipts}
+        contextPrompt="You are an AI assistant for the Goods Receipt page. Help the user analyze, summarize, and answer questions about the goods receipts data."
+        dataContextBuilder={goodsReceiptDataContextBuilder}
+      />
     </div>
   );
 } 

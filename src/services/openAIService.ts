@@ -1,48 +1,35 @@
 import axios from 'axios';
-import { InventoryItem } from './googleSheetsService';
 
 const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 
-export interface ChatMessage {
-  role: 'user' | 'assistant' | 'system';
+interface ChatMessage {
+  role: 'system' | 'user' | 'assistant';
   content: string;
 }
 
-export interface ChatResponse {
+interface ChatResponse {
   message: string;
   error?: string;
 }
 
 class OpenAIService {
-  private systemPrompt = `You are an AI assistant for an inventory management system. You have access to inventory data and can help users with:
-
-1. Inventory analysis and insights
-2. Stock level recommendations
-3. Identifying low stock items
-4. Category-based analysis
-5. Supplier information
-6. Location-based queries
-7. General inventory management advice
-
-Always provide helpful, accurate responses based on the available data. If you don't have enough information to answer a question, ask for clarification or suggest what additional data might be needed.`;
+  private systemPrompt = `You are an AI assistant for an aircraft parts inventory management system. Help users analyze inventory data, identify critical parts, and provide insights about stock levels and conditions.`;
 
   async chatWithInventory(
     userMessage: string,
-    inventoryData: InventoryItem[]
+    inventoryData: any[],
+    systemPromptOverride?: string
   ): Promise<ChatResponse> {
     try {
       if (!OPENAI_API_KEY) {
         throw new Error('OpenAI API key not configured');
       }
 
-      // Create a context string with inventory data
-      const inventoryContext = this.createInventoryContext(inventoryData);
-      
       const messages: ChatMessage[] = [
         {
           role: 'system',
-          content: `${this.systemPrompt}\n\nCurrent inventory data:\n${inventoryContext}`
+          content: systemPromptOverride || this.systemPrompt
         },
         {
           role: 'user',
@@ -55,7 +42,7 @@ Always provide helpful, accurate responses based on the available data. If you d
         {
           model: 'gpt-3.5-turbo',
           messages: messages,
-          max_tokens: 1000,
+          max_tokens: 500,
           temperature: 0.7,
         },
         {
@@ -84,65 +71,80 @@ Always provide helpful, accurate responses based on the available data. If you d
     }
   }
 
-  private createInventoryContext(inventoryData: InventoryItem[]): string {
+  private createInventoryContext(inventoryData: any[]): string {
     if (!inventoryData.length) {
       return 'No inventory data available.';
     }
 
     const summary = {
       totalItems: inventoryData.length,
-      categories: [...new Set(inventoryData.map(item => item.category))],
-      lowStockItems: inventoryData.filter(item => item.quantity <= item.minQuantity).length,
-      outOfStockItems: inventoryData.filter(item => item.quantity === 0).length,
-      suppliers: [...new Set(inventoryData.map(item => item.supplier))],
-      locations: [...new Set(inventoryData.map(item => item.location))],
+      uniqueParts: new Set(inventoryData.map(item => item.PN)).size,
+      materialGroups: [...new Set(inventoryData.map(item => item.MAT_GROUP))],
+      conditions: [...new Set(inventoryData.map(item => item.CONDITION_CODE))],
+      warehouses: [...new Set(inventoryData.map(item => item.WAREHOUSE_CODE))],
+      totalValue: inventoryData.reduce((sum, item) => sum + (item.EXT_COST || 0), 0),
+      lowStockItems: inventoryData.filter(item => item.QTY_OH <= 1).length,
+      reservedItems: inventoryData.filter(item => item.QTY_RESERVED > 0).length,
     };
 
     let context = `Inventory Summary:
 - Total Items: ${summary.totalItems}
-- Categories: ${summary.categories.join(', ')}
+- Unique Part Numbers: ${summary.uniqueParts}
+- Material Groups: ${summary.materialGroups.join(', ')}
+- Condition Codes: ${summary.conditions.join(', ')}
+- Warehouses: ${summary.warehouses.join(', ')}
+- Total Inventory Value: $${summary.totalValue.toFixed(2)}
 - Low Stock Items: ${summary.lowStockItems}
-- Out of Stock Items: ${summary.outOfStockItems}
-- Suppliers: ${summary.suppliers.join(', ')}
-- Locations: ${summary.locations.join(', ')}
+- Items with Reservations: ${summary.reservedItems}
 
 Sample Items:`;
 
-    // Add first 10 items as examples
-    const sampleItems = inventoryData.slice(0, 10);
-    sampleItems.forEach(item => {
-      context += `\n- ${item.name} (SKU: ${item.sku}): ${item.quantity} ${item.unit} in ${item.location}, Category: ${item.category}`;
+    // Add first 5 items as examples
+    inventoryData.slice(0, 5).forEach(item => {
+      context += `\n- ${item.PN}: ${item.DESCRIPTION}
+  * Qty: ${item.QTY_OH} (Available: ${item.QTY_AVAILABLE}, Reserved: ${item.QTY_RESERVED})
+  * Location: ${item.LOCATION_CODE} (${item.WAREHOUSE_CODE})
+  * Condition: ${item.CONDITION_CODE}
+  * Material Group: ${item.MAT_GROUP}
+  * Cost: $${item.UNIT_COST.toFixed(2)}`;
     });
 
     return context;
   }
 
-  async generateInventoryInsights(inventoryData: InventoryItem[]): Promise<string> {
-    const prompt = `Based on the inventory data, provide 3-5 key insights about:
-1. Stock levels and potential issues
-2. Category distribution
-3. Supplier analysis
-4. Recommendations for inventory management
+  async generateInventoryInsights(inventoryData: any[]): Promise<string> {
+    const prompt = `Based on the aircraft parts inventory data, provide 3-5 key insights about:
+1. Critical parts availability and stock levels
+2. Distribution across material groups and conditions
+3. High-value items and cost analysis
+4. Warehouse utilization and location optimization
+5. Parts requiring attention (age, condition, quantity)
 
-Please format the response in a clear, bullet-pointed format.`;
+Please format the response in a clear, bullet-pointed format with specific recommendations.`;
 
     const response = await this.chatWithInventory(prompt, inventoryData);
     return response.message;
   }
 
-  async analyzeLowStock(inventoryData: InventoryItem[]): Promise<string> {
-    const lowStockItems = inventoryData.filter(item => item.quantity <= item.minQuantity);
+  async analyzeLowStock(inventoryData: any[]): Promise<string> {
+    const lowStockItems = inventoryData.filter(item => item.QTY_OH <= 1);
     
-    const prompt = `Analyze the low stock items and provide:
-1. A summary of items that need reordering
-2. Priority recommendations based on stock levels
+    const prompt = `Analyze the low stock aircraft parts and provide:
+1. Critical parts that need immediate attention
+2. Priority recommendations based on:
+   - Part criticality (LLP vs Expendable)
+   - Current quantity vs typical usage
+   - Lead time considerations
 3. Suggested actions for each critical item
+4. Alternative parts or locations if available
 
-Low stock items: ${lowStockItems.map(item => `${item.name} (${item.quantity}/${item.minQuantity})`).join(', ')}`;
+Low stock items: ${lowStockItems.map(item => 
+  `${item.PN} (${item.DESCRIPTION}) - Qty: ${item.QTY_OH}, Category: ${item.STOCK_CATEGORY_CODE}`
+).join('\n')}`;
 
     const response = await this.chatWithInventory(prompt, inventoryData);
     return response.message;
   }
 }
 
-export const openAIService = new OpenAIService(); 
+export default new OpenAIService(); 

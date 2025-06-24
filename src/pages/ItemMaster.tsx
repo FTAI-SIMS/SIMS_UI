@@ -1,3 +1,5 @@
+import PageAIChat from '../components/PageAIChat';
+
 const sampleItems = [
   {
     PN: '336-024-704-0',
@@ -73,6 +75,16 @@ const conditionColors: Record<string, string> = {
   OH: 'bg-purple-100 text-purple-800',
 };
 
+function itemMasterDataContextBuilder(data: typeof sampleItems) {
+  if (!data.length) return 'No item master data available.';
+  let summary = `Total Items: ${data.length}\n`;
+  summary += 'Sample Items:';
+  data.slice(0, 5).forEach((item) => {
+    summary += `\n- ${item.PN}: ${item.DESCRIPTION} (${item.QTY_OH} ${item.STOCK_UNIT}) in ${item.LOCATION_CODE}`;
+  });
+  return summary;
+}
+
 export default function ItemMaster() {
   return (
     <div className="space-y-6">
@@ -128,6 +140,11 @@ export default function ItemMaster() {
           </div>
         </div>
       </div>
+      <PageAIChat
+        data={sampleItems}
+        contextPrompt="You are an AI assistant for the Item Master page. Help the user analyze, summarize, and answer questions about the item master data."
+        dataContextBuilder={itemMasterDataContextBuilder}
+      />
     </div>
   );
 } 
