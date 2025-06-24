@@ -1,2 +1,5 @@
 node_modules
 *.timestamp-*.mjs
+
+# Ignore environment variable files
+.env
