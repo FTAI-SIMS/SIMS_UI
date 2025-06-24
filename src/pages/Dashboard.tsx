@@ -1,4 +1,6 @@
 import React, { useEffect, useRef } from 'react';
+import PageAIChat from '../components/PageAIChat';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, Legend } from 'recharts';
 
 const stats = [
   { label: 'Total Items', value: 128 },
@@ -7,16 +9,27 @@ const stats = [
   { label: 'Warehouses', value: 3 },
 ];
 
-const stockByCategory = [
-  { category: 'LLP', count: 40 },
-  { category: 'EXPENDABLE', count: 30 },
-  { category: 'CFM56-5B/7', count: 25 },
-  { category: 'SUPPORT', count: 18 },
-  { category: 'DISK', count: 15 },
+// Minimal dummy data for dashboard context
+const dashboardData = [
+  { label: 'Total Inventory Items', value: 120 },
+  { label: 'Low Stock Items', value: 8 },
+  { label: 'Open Receipts', value: 5 },
+  { label: 'Warehouses', value: 3 },
 ];
 
-const aiSummary = `
-Inventory levels are stable overall. Notably, 7 items are flagged as low stock, primarily in the LLP and Expendable categories. No critical shortages detected, but consider restocking COVER ASSY-OIL INLET and DISK-LPT STG 3 soon. Recent receipts have improved stock in the main warehouse. No urgent alerts, but shelf life monitoring is recommended for older parts.`;
+function dashboardContextBuilder(data: typeof dashboardData) {
+  return data.map(item => `${item.label}: ${item.value}`).join('\n');
+}
+
+// Sample data for Stock by Category
+const stockByCategory = [
+  { category: 'Expendable', stock: 40 },
+  { category: 'LLP', stock: 25 },
+  { category: 'Rotable', stock: 30 },
+  { category: 'Consumable', stock: 15 },
+];
+
+const aiSummary = `Inventory levels are stable overall. Notably, 7 items are flagged as low stock, primarily in the LLP and Expendable categories. No critical shortages detected, but consider restocking COVER ASSY-OIL INLET and DISK-LPT STG 3 soon. Recent receipts have improved stock in the main warehouse. No urgent alerts, but shelf life monitoring is recommended for older parts.`;
 
 export default function Dashboard() {
   const barRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -27,21 +40,18 @@ export default function Dashboard() {
         bar.style.height = '0px';
         setTimeout(() => {
           bar.style.transition = 'height 1s cubic-bezier(0.4,0,0.2,1)';
-          bar.style.height = `${stockByCategory[idx].count * 3}px`;
+          bar.style.height = `${stockByCategory[idx].stock * 3}px`;
         }, 200 + idx * 120);
       }
     });
   }, []);
 
   return (
-    <div className="space-y-8">
-      <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold text-gray-900 mb-4">Dashboard</h1>
       {/* AI Insights Card */}
-      <div className="bg-brand-lightBlue border-l-8 border-brand-orange rounded-lg shadow p-6 mb-2 opacity-0 translate-y-4 animate-fadein">
-        <div className="flex items-center mb-2">
-          <span className="inline-block bg-brand-orange text-white rounded-full px-3 py-1 text-xs font-bold mr-2">AI Insights</span>
-          <span className="text-sm text-brand-navy font-semibold">Powered by LLM</span>
-        </div>
+      <div className="bg-brand-lightBlue border-l-8 border-brand-orange rounded-lg shadow p-6 mb-2">
+        <h2 className="text-xl font-semibold text-brand-navy mb-2">AI Insights</h2>
         <div className="text-brand-navy text-base leading-relaxed">
           {aiSummary}
         </div>
@@ -58,23 +68,25 @@ export default function Dashboard() {
           </div>
         ))}
       </div>
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-semibold mb-4">Stock by Category</h2>
-        <div className="flex items-end space-x-6 h-40">
-          {stockByCategory.map((cat, idx) => (
-            <div key={cat.category} className="flex flex-col items-center justify-end h-full">
-              <div
-                ref={el => (barRefs.current[idx] = el)}
-                className="w-10 rounded-t bg-brand-blue bar-animate"
-                style={{ height: 0 }}
-                title={String(cat.count)}
-              ></div>
-              <div className="mt-2 text-xs text-gray-700">{cat.category}</div>
-              <div className="text-xs text-gray-500">{cat.count}</div>
-            </div>
-          ))}
-        </div>
+      {/* Animated & Interactive Bar Chart for Stock by Category */}
+      <div className="bg-white rounded-lg shadow p-4">
+        <h2 className="text-lg font-semibold mb-2">Stock by Category</h2>
+        <ResponsiveContainer width="100%" height={250}>
+          <BarChart data={stockByCategory} barCategoryGap={30}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="category" />
+            <YAxis allowDecimals={false} />
+            <Tooltip cursor={{ fill: '#f3f4f6' }} />
+            <Legend />
+            <Bar dataKey="stock" fill="#6366f1" radius={[8, 8, 0, 0]} isAnimationActive animationDuration={1200} />
+          </BarChart>
+        </ResponsiveContainer>
       </div>
+      <PageAIChat
+        data={dashboardData}
+        contextPrompt="You are an AI assistant for the inventory management dashboard. Help summarize key metrics, answer questions about overall inventory status, and provide insights."
+        dataContextBuilder={dashboardContextBuilder}
+      />
       <style>{`
         @keyframes fadein {
           to { opacity: 1; transform: none; }

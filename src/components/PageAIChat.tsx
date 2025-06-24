@@ -69,7 +69,7 @@ export default function PageAIChat<T>({ data, contextPrompt, dataContextBuilder 
           <p className="text-sm text-gray-500">Ask about this page's data</p>
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="overflow-y-auto p-4 space-y-4 max-h-72">
         {messages.map((message, index) => (
           <div
             key={index}

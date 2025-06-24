@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import PageAIChat from '../components/PageAIChat';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from 'recharts';
 
 interface InventoryItem {
   PN: string;
@@ -15,6 +16,100 @@ interface InventoryItem {
   STOCK_UNIT: string;
 }
 
+const sampleData: InventoryItem[] = [
+  {
+    PN: "336-024-704-0",
+    DESCRIPTION: "COVER ASSY-OIL INLET",
+    STOCK_LINE: "27",
+    QTY_OH: 1,
+    UNIT_COST: 120.042,
+    EXT_COST: 120.042,
+    CONDITION_CODE: "INS",
+    LOCATION_CODE: "PUT AWAY",
+    WAREHOUSE_CODE: "FTAIC-SV",
+    REC_DATE: "03/07/2018",
+    STOCK_UNIT: "EA"
+  },
+  {
+    PN: "338-010-003-0",
+    DESCRIPTION: "SHAFT-LPT",
+    STOCK_LINE: "3",
+    QTY_OH: 1,
+    UNIT_COST: 0,
+    EXT_COST: 0,
+    CONDITION_CODE: "AR",
+    LOCATION_CODE: "LPT-RACK-US",
+    WAREHOUSE_CODE: "PFR-COM",
+    REC_DATE: "06/07/2016",
+    STOCK_UNIT: "EA"
+  },
+  {
+    PN: "340-074-722-0",
+    DESCRIPTION: "SHAFT-LPT",
+    STOCK_LINE: "1",
+    QTY_OH: 1,
+    UNIT_COST: 0,
+    EXT_COST: 0,
+    CONDITION_CODE: "US",
+    LOCATION_CODE: "US-M13-1",
+    WAREHOUSE_CODE: "PFR-COM",
+    REC_DATE: "19/08/2016",
+    STOCK_UNIT: "EA"
+  },
+  {
+    PN: "336-002-006-0",
+    DESCRIPTION: "DISK-LPT STG 3",
+    STOCK_LINE: "38",
+    QTY_OH: 2,
+    UNIT_COST: 1002.26,
+    EXT_COST: 2004.52,
+    CONDITION_CODE: "NEW",
+    LOCATION_CODE: "T-2C",
+    WAREHOUSE_CODE: "FTAIC-SV",
+    REC_DATE: "16/08/2016",
+    STOCK_UNIT: "EA"
+  },
+  {
+    PN: "336-002-105-0",
+    DESCRIPTION: "DISK-LPT STG 4",
+    STOCK_LINE: "140",
+    QTY_OH: 0,
+    UNIT_COST: 66519.05,
+    EXT_COST: 0,
+    CONDITION_CODE: "OH",
+    LOCATION_CODE: "T-2A",
+    WAREHOUSE_CODE: "FTAIC-SV",
+    REC_DATE: "19/10/2021",
+    STOCK_UNIT: "EA"
+  },
+  {
+    PN: "338-077-502-0",
+    DESCRIPTION: "SUPPORT-RTR LPT",
+    STOCK_LINE: "152",
+    QTY_OH: 5,
+    UNIT_COST: 0,
+    EXT_COST: 0,
+    CONDITION_CODE: "AR",
+    LOCATION_CODE: "LM-COM-PFR-06",
+    WAREHOUSE_CODE: "PFR-COM",
+    REC_DATE: "01/03/2023",
+    STOCK_UNIT: "EA"
+  },
+  {
+    PN: "338-010-005-0",
+    DESCRIPTION: "SHAFT-LPT",
+    STOCK_LINE: "99",
+    QTY_OH: 3,
+    UNIT_COST: 0,
+    EXT_COST: 0,
+    CONDITION_CODE: "US",
+    LOCATION_CODE: "PA743527",
+    WAREHOUSE_CODE: "PFR-COM",
+    REC_DATE: "30/11/2022",
+    STOCK_UNIT: "EA"
+  }
+];
+
 function inventoryDataContextBuilder(data: InventoryItem[]) {
   if (!data.length) return 'No inventory data available.';
 
@@ -27,16 +122,22 @@ function inventoryDataContextBuilder(data: InventoryItem[]) {
     lowStockItems: data.filter(item => item.QTY_OH <= 1).length,
   };
 
-  return `Current Inventory Status:
-- Total Line Items: ${summary.totalItems}
-- Unique Part Numbers: ${summary.uniqueParts}
-- Condition Distribution: ${summary.conditions.map(c => `${c}: ${data.filter(i => i.CONDITION_CODE === c).length}`).join(', ')}
-- Warehouse Distribution: ${summary.warehouses.map(w => `${w}: ${data.filter(i => i.WAREHOUSE_CODE === w).length}`).join(', ')}
-- Total Inventory Value: $${summary.totalValue.toFixed(2)}
-- Low Stock Items (QTY ≤ 1): ${summary.lowStockItems}`;
+  return `Current Inventory Status:\n- Total Line Items: ${summary.totalItems}\n- Unique Part Numbers: ${summary.uniqueParts}\n- Condition Distribution: ${summary.conditions.map(c => `${c}: ${data.filter(i => i.CONDITION_CODE === c).length}`).join(', ')}\n- Warehouse Distribution: ${summary.warehouses.map(w => `${w}: ${data.filter(i => i.WAREHOUSE_CODE === w).length}`).join(', ')}\n- Total Inventory Value: $${summary.totalValue.toFixed(2)}\n- Low Stock Items (QTY ≤ 1): ${summary.lowStockItems}`;
 }
 
-export default function InventoryData({ data = [] }: { data: InventoryItem[] }) {
+// Prepare data for the bar chart (items by CONDITION_CODE)
+const conditionCounts = sampleData.reduce((acc, item) => {
+  acc[item.CONDITION_CODE] = (acc[item.CONDITION_CODE] || 0) + 1;
+  return acc;
+}, {} as Record<string, number>);
+
+const chartData = Object.entries(conditionCounts).map(([condition, count]) => ({
+  condition,
+  count,
+}));
+
+export default function InventoryData() {
+  const data = sampleData;
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState<{
     key: keyof InventoryItem;
@@ -45,8 +146,6 @@ export default function InventoryData({ data = [] }: { data: InventoryItem[] }) 
 
   const filteredAndSortedData = useMemo(() => {
     let filtered = data;
-    
-    // Apply search filter
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
       filtered = data.filter(item =>
@@ -55,12 +154,9 @@ export default function InventoryData({ data = [] }: { data: InventoryItem[] }) 
         item.LOCATION_CODE.toLowerCase().includes(searchLower)
       );
     }
-
-    // Apply sorting
     return [...filtered].sort((a, b) => {
       const aValue = a[sortConfig.key];
       const bValue = b[sortConfig.key];
-
       if (aValue === bValue) return 0;
       if (sortConfig.direction === 'asc') {
         return aValue < bValue ? -1 : 1;
@@ -93,6 +189,20 @@ export default function InventoryData({ data = [] }: { data: InventoryItem[] }) 
             Export Data
           </button>
         </div>
+      </div>
+
+      {/* Bar Chart for Condition Distribution */}
+      <div className="bg-white rounded-lg shadow p-4">
+        <h2 className="text-lg font-semibold mb-2">Items by Condition</h2>
+        <ResponsiveContainer width="100%" height={250}>
+          <BarChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="condition" />
+            <YAxis allowDecimals={false} />
+            <Tooltip />
+            <Bar dataKey="count" fill="#8884d8" />
+          </BarChart>
+        </ResponsiveContainer>
       </div>
 
       <div className="bg-white rounded-lg shadow overflow-hidden">
